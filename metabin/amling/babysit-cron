@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+
+$| = 1;
+
+use strict;
+use warnings;
+
+use File::Temp ('tempfile');
+
+my $f1 = tempfile('CLEANUP' => 0);
+my $f2 = tempfile('CLEANUP' => 0);
+
+my $child = fork();
+if($child == -1)
+{
+    die "Could not fork: $!";
+}
+if(!$child)
+{
+    open(STDOUT, ">", $f1) || die "Could not open STDOUT to $f1: $!";
+    open(STDERR, ">", $f2) || die "Could not open STDERR to $f2: $!";
+    exec("env", @ARGV) || die "Could not exec: $!";
+}
+else
+{
+    waitpid($child, 0);
+    my $exit = $? >> 8;
+    if($exit != 0)
+    {
+        for my $p ([$f1, "STDOUT"], [$f2, "STDERR"])
+        {
+            my ($fn, $label) = @$p;
+            open(my $fh, $fn) || die "Could not open $fn: $!";
+            while(my $l = <$fh>)
+            {
+                chomp $l;
+                print "[$label] $l\n";
+            }
+        }
+        print "[EXIT] $exit\n";
+    }
+    unlink $f1 || die "Coult not unlink $f1: $!";
+    unlink $f2 || die "Coult not unlink $f2: $!";
+    exit($exit);
+}
