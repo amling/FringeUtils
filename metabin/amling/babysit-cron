@@ -39,7 +39,7 @@ else
         }
         print "[EXIT] $exit\n";
     }
-    unlink $f1 || die "Coult not unlink $f1: $!";
-    unlink $f2 || die "Coult not unlink $f2: $!";
+    unlink $f1 || die "Could not unlink $f1: $!";
+    unlink $f2 || die "Could not unlink $f2: $!";
     exit($exit);
 }
