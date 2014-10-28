@@ -7,8 +7,9 @@ use warnings;
 
 use File::Temp ('tempfile');
 
-my $f1 = tempfile('CLEANUP' => 0);
-my $f2 = tempfile('CLEANUP' => 0);
+my ($f1, $f2);
+(undef, $f1) = tempfile('CLEANUP' => '0');
+(undef, $f2) = tempfile('CLEANUP' => '0');
 
 my $child = fork();
 if($child == -1)
