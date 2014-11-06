@@ -6,6 +6,15 @@ use strict;
 use warnings;
 
 use File::Temp ('tempfile');
+use Getopt::Long;
+
+Getopt::Long::Configure('require_order');
+
+my @cc;
+
+GetOptions(
+    'cc=s' => \@cc,
+) || die;
 
 my ($f1, $f2);
 (undef, $f1) = tempfile('CLEANUP' => '0');
@@ -28,6 +37,7 @@ else
     my $exit = $? >> 8;
     if($exit != 0)
     {
+        my @output;
         for my $p ([$f1, "STDOUT"], [$f2, "STDERR"])
         {
             my ($fn, $label) = @$p;
@@ -35,10 +45,19 @@ else
             while(my $l = <$fh>)
             {
                 chomp $l;
-                print "[$label] $l\n";
+                push @output, "[$label] $l\n";
             }
         }
-        print "[EXIT] $exit\n";
+        push @output, "[EXIT] $exit\n";
+
+        print @output;
+
+        if(@cc)
+        {
+            open(my $fh, '|-', 'mail', '-s', '[babysit-cron] ' . join(' ', @ARGV), @cc) || die "Could not open mail ...: $!";
+            print $fh @output;
+            close($fh) || die "Could not close mail ...: $!";
+        }
     }
     unlink $f1 || die "Could not unlink $f1: $!";
     unlink $f2 || die "Could not unlink $f2: $!";
