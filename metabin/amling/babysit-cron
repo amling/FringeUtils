@@ -7,6 +7,7 @@ use warnings;
 
 use File::Temp ('tempfile');
 use Getopt::Long;
+use MIME::Lite;
 
 Getopt::Long::Configure('require_order');
 
@@ -58,9 +59,11 @@ else
         {
             $subj = '[babysit-cron] ' . join(' ', @ARGV) unless(defined($subj));
 
-            open(my $fh, '|-', 'mail', '-s', '[babysit-cron] ' . join(' ', @ARGV), @cc) || die "Could not open mail ...: $!";
-            print $fh @output;
-            close($fh) || die "Could not close mail ...: $!";
+            MIME::Lite->new(
+                'To' => join(', ', @cc),
+                'Subject' => $subj,
+                'Data' => join('', @output),
+            )->send();
         }
     }
     unlink $f1 || die "Could not unlink $f1: $!";
