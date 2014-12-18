@@ -11,9 +11,11 @@ use Getopt::Long;
 Getopt::Long::Configure('require_order');
 
 my @cc;
+my $subj = undef;
 
 GetOptions(
     'cc=s' => \@cc,
+    'subj=s' => \$subj,
 ) || die;
 
 my ($f1, $f2);
@@ -54,6 +56,8 @@ else
 
         if(@cc)
         {
+            $subj = '[babysit-cron] ' . join(' ', @ARGV) unless(defined($subj));
+
             open(my $fh, '|-', 'mail', '-s', '[babysit-cron] ' . join(' ', @ARGV), @cc) || die "Could not open mail ...: $!";
             print $fh @output;
             close($fh) || die "Could not close mail ...: $!";
