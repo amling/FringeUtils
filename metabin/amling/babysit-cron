@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+
+$| = 1;
+
+use strict;
+use warnings;
+
+use File::Temp ('tempfile');
+use Getopt::Long;
+use MIME::Lite;
+
+Getopt::Long::Configure('require_order');
+
+my @cc;
+my $subj = undef;
+
+GetOptions(
+    'cc=s' => \@cc,
+    'subj=s' => \$subj,
+) || die;
+
+my ($f1, $f2);
+(undef, $f1) = tempfile('CLEANUP' => '0');
+(undef, $f2) = tempfile('CLEANUP' => '0');
+
+my $child = fork();
+if($child == -1)
+{
+    die "Could not fork: $!";
+}
+if(!$child)
+{
+    open(STDOUT, ">", $f1) || die "Could not open STDOUT to $f1: $!";
+    open(STDERR, ">", $f2) || die "Could not open STDERR to $f2: $!";
+    exec("env", @ARGV) || die "Could not exec: $!";
+}
+else
+{
+    waitpid($child, 0);
+    my $exit = $? >> 8;
+    if($exit != 0)
+    {
+        my @output;
+        for my $p ([$f1, "STDOUT"], [$f2, "STDERR"])
+        {
+            my ($fn, $label) = @$p;
+            open(my $fh, $fn) || die "Could not open $fn: $!";
+            while(my $l = <$fh>)
+            {
+                chomp $l;
+                push @output, "[$label] $l\n";
+            }
+        }
+        push @output, "[EXIT] $exit\n";
+
+        print @output;
+
+        if(@cc)
+        {
+            $subj = '[babysit-cron] ' . join(' ', @ARGV) unless(defined($subj));
+
+            MIME::Lite->new(
+                'To' => join(', ', @cc),
+                'Subject' => $subj,
+                'Data' => join('', @output),
+            )->send();
+        }
+    }
+    unlink $f1 || die "Could not unlink $f1: $!";
+    unlink $f2 || die "Could not unlink $f2: $!";
+    exit($exit);
+}
