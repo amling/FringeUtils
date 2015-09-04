@@ -210,7 +210,7 @@ sub wait_subset
         if(defined($timeout))
         {
             my $now_time = int(time() * 1000);
-            my $left = $start_time + $timeout - $now_time;
+            $left = $start_time + $timeout - $now_time;
             if($left <= 0)
             {
                 if($pumped)
@@ -224,6 +224,7 @@ sub wait_subset
                     $left = 0;
                 }
             }
+            $left /= 1000;
         }
         select($rsout, $ws, $es, $left);
 
