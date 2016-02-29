@@ -253,7 +253,7 @@ sub wait_subset
                 $this->{'RESULTS'}->{$in_flight->{'ID'}} = $munged_result;
 
                 close $in_flight->{'RH'};
-                waitpid $in_flight->{'CHILD_PID'}, WNOHANG;
+                waitpid $in_flight->{'CHILD_PID'}, 0;
 
                 $this->{'IN_FLIGHT'}->[$i] = undef;
             }
