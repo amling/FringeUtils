@@ -84,54 +84,57 @@ sub _maybe_spawn
 {
     my $this = shift;
 
-    my $queue = $this->{'QUEUE'};
-
-    if(!@$queue)
+    while(1)
     {
-        return;
-    }
+        my $queue = $this->{'QUEUE'};
 
-    my $limit = $this->{'LIMIT'};
-    my $in_flight = $this->{'IN_FLIGHT'};
+        if(!@$queue)
+        {
+            return;
+        }
 
-    if($limit != -1 && @$in_flight >= $limit)
-    {
-        return;
-    }
+        my $limit = $this->{'LIMIT'};
+        my $in_flight = $this->{'IN_FLIGHT'};
 
-    my ($id, $subref, $args) = @{shift @$queue};
+        if($limit != -1 && @$in_flight >= $limit)
+        {
+            return;
+        }
 
-    $this->{'BEFORE_FORK'}->($this, $id, $subref, @$args);
+        my ($id, $subref, $args) = @{shift @$queue};
 
-    my ($rh, $wh);
+        $this->{'BEFORE_FORK'}->($this, $id, $subref, @$args);
 
-    pipe $rh, $wh;
-    my $child = fork();
+        my ($rh, $wh);
 
-    if($child == 0)
-    {
-        close $rh;
+        pipe $rh, $wh;
+        my $child = fork();
 
-        $this->child_shutdown();
+        if($child == 0)
+        {
+            close $rh;
+
+            $this->child_shutdown();
 
 #print STDERR "Starting child for $id\n";
-        my @result = $subref->($id, @$args);
-        my $result_storn = freeze([@result]);
+            my @result = $subref->($id, @$args);
+            my $result_storn = freeze([@result]);
 
-        print $wh $result_storn;
+            print $wh $result_storn;
 
-        exit 0;
-    }
-    else
-    {
-        close $wh;
-        push @$in_flight,
+            exit 0;
+        }
+        else
         {
-            'ID' => $id,
-            'CHILD_PID' => $child,
-            'RH' => $rh,
-            'BUFFER' => '',
-        };
+            close $wh;
+            push @$in_flight,
+            {
+                'ID' => $id,
+                'CHILD_PID' => $child,
+                'RH' => $rh,
+                'BUFFER' => '',
+            };
+        }
     }
 }
 
