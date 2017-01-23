@@ -45,7 +45,8 @@ my @options =
 );
 
 # to not slurp options from the command
-Getopt::Long::Configure('require_order');
+# also to not fuck -v/-V
+Getopt::Long::Configure('require_order', 'no_ignore_case');
 
 GetOptions(@options) || usage(1);
 
