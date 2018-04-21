@@ -76,9 +76,11 @@ while(1)
         ['L', 'Before'],
         ['L', 'After'],
         ['L', 'Result'],
+        ['L', 'Done'],
     ];
     push @table,
     [
+        ['-'],
         ['-'],
         ['-'],
         ['-'],
@@ -88,20 +90,18 @@ while(1)
     for(my $id = 0; $id < @ARGV; ++$id)
     {
         my $file = $ARGV[$id];
-        my $s1;
         my @stat = stat "$file.bz2";
-        my $result = '';
+        my $s1;
+        my $result;
         if(@stat)
         {
             $s1 = format_size($stat[7]);
-            if($done[$id])
-            {
-                $result = $s0[$id] ? sprintf("%0.02f%%", 100 * $stat[7] / $s0[$id]) : 'N/A';
-            }
+            $result = $s0[$id] ? sprintf("%0.02f%%", 100 * $stat[7] / $s0[$id]) : 'N/A';
         }
         else
         {
-            $s1 = "...";
+            $s1 = '...';
+            $result = '';
         }
         push @table,
         [
@@ -109,6 +109,7 @@ while(1)
             ['L', format_size($s0[$id])],
             ['L', $s1],
             ['R', $result],
+            ['L', ($done[$id] ? 'Y' : '...')],
         ];
     }
     my $table = FringeUtils::Amling::Table::format_table(\@table);
